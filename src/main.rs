@@ -11,19 +11,26 @@ fn main() {
         print!("🔥 ");
         stdout().flush().unwrap();
 
-        // Input
+        // Read the input.
         let mut input = String::new();
         stdin().read_line(&mut input).unwrap();
 
+        // Split the input into the different commands using the "pipe".
         let mut commands = input.trim().split(" | ").peekable();
         let mut previous_result = None;
 
+        // Handle the commands in the correct order.
         while let Some(full_command) = commands.next() {
+            // Parse the commands.
             let mut parts = full_command.trim().split_whitespace();
             let command = parts.next().unwrap();
             let args = parts;
 
+            // Match the command to a predefined command or what we can pass through to process.
             match command {
+                // exit the shell.
+                "exit" => return,
+                // cd defined just like the bash specification.
                 "cd" => {
                     let new_dir = args.peekable().peek().map_or("/", |x| *x);
                     let root = Path::new(new_dir);
@@ -33,19 +40,16 @@ fn main() {
 
                     previous_result = None;
                 }
-                "exit" => return,
+                // Handle the command if no match was found.
                 command => {
                     let stdin = previous_result.map_or(Stdio::inherit(), |output: Child| {
                         Stdio::from(output.stdout.unwrap())
                     });
 
+                    // Check if another command comes after this one, and if so pipe it to the next, or finalise with an inherit.
                     let stdout = if commands.peek().is_some() {
-                        // there is another command piped behind this one
-                        // prepare to send output to the next command
                         Stdio::piped()
                     } else {
-                        // there are no more commands piped behind this one
-                        // send output to shell stdout
                         Stdio::inherit()
                     };
 
@@ -68,8 +72,8 @@ fn main() {
             }
         }
 
+        // Wait for the commands to complete.
         if let Some(mut final_result) = previous_result {
-            // block until the final command has finished
             final_result.wait().unwrap();
         }
     }
