@@ -1,7 +1,55 @@
 use std::io::{stdin, stdout, Write};
 use std::process::{Child, Command, Stdio};
 mod commands;
-use commands::{cd, echo};
+use commands::*;
+use custom_commands::rcat::rcat; // Assuming the custom library is named "custom"
+
+fn handle_command(command: &str, args: &[&str], previous_result: Option<Child>) -> Option<Child> {
+    match command {
+        "exit" => {
+            exit(args);
+            None
+        }
+        "cd" => {
+            cd(args);
+            None
+        }
+        "echo" => {
+            echo(args);
+            None
+        }
+        "rcat" => {
+            rcat(&args);
+
+            None
+        }
+        _ => {
+            let stdin = previous_result.map_or(Stdio::inherit(), |output: Child| {
+                Stdio::from(output.stdout.unwrap())
+            });
+
+            let stdout = if args.is_empty() {
+                Stdio::inherit()
+            } else {
+                Stdio::piped()
+            };
+
+            let output = Command::new(command)
+                .args(args)
+                .stdin(stdin)
+                .stdout(stdout)
+                .spawn();
+
+            match output {
+                Ok(output) => Some(output),
+                Err(e) => {
+                    eprintln!("{}", e);
+                    None
+                }
+            }
+        }
+    }
+}
 
 fn main() {
     loop {
@@ -31,49 +79,8 @@ fn main() {
             let command = parts.next().unwrap();
             let args: Vec<_> = parts.collect();
 
-            // Match the command to a predefined command or what we can pass through to process.
-            match command {
-                // exit the shell.
-                "exit" => return,
-                // cd defined just like the bash specification.
-                "cd" => {
-                    cd(&args);
-                    previous_result = None;
-                }
-                // Handle the command if no match was found.
-                "echo" => {
-                    echo(&args);
-                    previous_result = None;
-                }
-                command => {
-                    let stdin = previous_result.map_or(Stdio::inherit(), |output: Child| {
-                        Stdio::from(output.stdout.unwrap())
-                    });
-
-                    // Check if another command comes after this one, and if so pipe it to the next, or finalize with an inherit.
-                    let stdout = if commands.peek().is_some() {
-                        Stdio::piped()
-                    } else {
-                        Stdio::inherit()
-                    };
-
-                    let output = Command::new(command)
-                        .args(args)
-                        .stdin(stdin)
-                        .stdout(stdout)
-                        .spawn();
-
-                    match output {
-                        Ok(output) => {
-                            previous_result = Some(output);
-                        }
-                        Err(e) => {
-                            previous_result = None;
-                            eprintln!("{}", e);
-                        }
-                    };
-                }
-            }
+            // Execute the command.
+            previous_result = handle_command(command, &args, previous_result);
         }
 
         // Wait for the commands to complete.

@@ -5,10 +5,3 @@ version = 3
 [[package]]
 name = "custom_commands"
 version = "0.1.0"
-
-[[package]]
-name = "rshell"
-version = "0.1.0"
-dependencies = [
- "custom_commands",
-]

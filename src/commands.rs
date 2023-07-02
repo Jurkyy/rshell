@@ -1,5 +1,6 @@
 use std::env;
 use std::path::PathBuf;
+use std::process;
 
 pub fn cd(args: &[&str]) {
     let new_dir = args.first().cloned().unwrap_or("~");
@@ -38,4 +39,8 @@ fn home_directory() -> Option<PathBuf> {
 pub fn echo(args: &[&str]) {
     let text = args.join(" ");
     println!("{}", text);
+}
+
+pub fn exit(_args: &[&str]) {
+    process::exit(0);
 }
