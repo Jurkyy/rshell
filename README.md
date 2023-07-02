@@ -1,4 +1,12 @@
 # Rshell
 Homemade shell, made in Rust!
 
-Currently just some functionality as in the [tutorial](https://www.joshmcguigan.com/blog/build-your-own-shell-rust/) that was followed as a start for this project. 
+Re-implements:
+* exit
+* cd
+* echo
+
+Imports custom commands:
+* rcat
+
+Anything that is not defined above will be executed my the underlying terminal.
