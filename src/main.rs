@@ -19,8 +19,7 @@ fn handle_command(command: &str, args: &[&str], previous_result: Option<Child>) 
             None
         }
         "rcat" => {
-            rcat(&args);
-
+            rcat(args);
             None
         }
         _ => {
