@@ -1,9 +1,7 @@
-use std::path::Path;
+use std::io::{stdin, stdout, Write};
 use std::process::{Child, Command, Stdio};
-use std::{
-    env,
-    io::{stdin, stdout, Write},
-};
+mod commands;
+use commands::{cd, echo};
 
 fn main() {
     loop {
@@ -15,16 +13,23 @@ fn main() {
         let mut input = String::new();
         stdin().read_line(&mut input).unwrap();
 
+        // Trim the input to remove trailing newline and leading/trailing whitespace.
+        let input = input.trim();
+
+        if input.is_empty() {
+            continue; // Skip the iteration if the input is empty.
+        }
+
         // Split the input into the different commands using the "pipe".
-        let mut commands = input.trim().split(" | ").peekable();
+        let mut commands = input.split(" | ").peekable();
         let mut previous_result = None;
 
         // Handle the commands in the correct order.
         while let Some(full_command) = commands.next() {
             // Parse the commands.
-            let mut parts = full_command.trim().split_whitespace();
+            let mut parts = full_command.split_whitespace();
             let command = parts.next().unwrap();
-            let args = parts;
+            let args: Vec<_> = parts.collect();
 
             // Match the command to a predefined command or what we can pass through to process.
             match command {
@@ -32,21 +37,20 @@ fn main() {
                 "exit" => return,
                 // cd defined just like the bash specification.
                 "cd" => {
-                    let new_dir = args.peekable().peek().map_or("/", |x| *x);
-                    let root = Path::new(new_dir);
-                    if let Err(e) = env::set_current_dir(&root) {
-                        eprintln!("{}", e);
-                    }
-
+                    cd(&args);
                     previous_result = None;
                 }
                 // Handle the command if no match was found.
+                "echo" => {
+                    echo(&args);
+                    previous_result = None;
+                }
                 command => {
                     let stdin = previous_result.map_or(Stdio::inherit(), |output: Child| {
                         Stdio::from(output.stdout.unwrap())
                     });
 
-                    // Check if another command comes after this one, and if so pipe it to the next, or finalise with an inherit.
+                    // Check if another command comes after this one, and if so pipe it to the next, or finalize with an inherit.
                     let stdout = if commands.peek().is_some() {
                         Stdio::piped()
                     } else {
