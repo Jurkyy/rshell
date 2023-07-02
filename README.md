@@ -1,4 +1,4 @@
-#My Homemade Rust Shell
+# My Homemade Rust Shell
 
 Welcome to my homemade shell, a command-line interface (CLI) program built with Rust. Inspired by the mysterious black box of hackers, each line in the shell is adorned with a delightful :fire: emoji because it's just that cool.
 
